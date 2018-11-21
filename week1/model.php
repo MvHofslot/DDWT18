@@ -112,10 +112,76 @@ function p_print($input){
  * @param string $message Error/Success message
  * @return string
  */
+
 function get_error($feedback){
     $error_exp = '
         <div class="alert alert-'.$feedback['type'].'" role="alert">
             '.$feedback['message'].'
         </div>';
     return $error_exp;
+}
+
+function connect_db($host, $db, $username, $password)
+{
+    $charset = 'utf8mb4';
+    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ];
+    try {
+        $pdo = new PDO($dsn, $username, $password, $options);
+    } catch (\PDOException $e) {
+        echo sprintf("Failed to connect. %s", $e->getMessage());
+    }
+    return $pdo;
+}
+
+function count_series ($pdo) {
+    $stmt = $pdo->prepare('SELECT * FROM series');
+    $stmt->execute();
+    $amount = $stmt->rowCount();
+    return $amount;
+}
+
+function get_series($pdo) {
+    $stmt = $pdo->prepare('SELECT * FROM series');
+    $stmt->execute();
+    $series = $stmt->fetchAll();
+    $series_exp = Array();
+    /* Create array with htmlspecialchars */
+    foreach ($series as $key => $value) {
+        foreach ($value as $user_key => $user_input) {
+            $series_exp[$key][$user_key] = htmlspecialchars($user_input);
+        }
+    }
+    return $series_exp;
+}
+
+function get_series_table($series_exp) {
+    $series_table = '
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th scope="col">Series</th>
+            <th scope="col"></th>
+        </tr>
+        </thead>
+        <tbody>';
+    foreach ($series_exp as $key => $value){
+        $series_table .= '
+        <tr>
+            <th scope="row">'.$value['name'].'</th>
+            <td><a href="/DDWT18/week1/serie/?series_id='.$value['id'].'" role="button" class="btn btn-primary">More info</a></td>
+        </tr>';
+    }
+    $series_table .= '
+        </tbody>
+    </table>';
+    return $series_table;
+}
+
+function get_series_info($series_exp, $series_id) {
+    $series_info = $series_exp[$series_id];
+    return $series_info;
 }
